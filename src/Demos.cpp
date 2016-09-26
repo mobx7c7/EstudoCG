@@ -117,67 +117,70 @@ namespace CG
 			static const Color colorM(1, 0, 1);
 			static const Color colorY(1, 1, 0);
 
-			Line intersec{
+			Line lineA{
 				Coord2(gl::windowToWorldCoord(GetEnviromentSettings().GetCursorPosition())),
 				Coord2(0.0f, -2.0f),
 			};
-			Line plane{
+			Line lineB{
 				Coord2(-1.0f, 0.0f),
 				Coord2(1.0f, 0.0f),
 			};
 
-			Coord2 planeNormal(0.0f, 1.0f);
+			Coord2 normalLineB(0.0f, 1.0f);
+
+			////////////////////////////////////////////////////////////////////////
 
 			static float ang = 0.0f;
 			ang += 0.1f;
 			float theta1 = toRadians(ang);
 
-			intersec.v2 = glm::rotate(intersec.v2, toRadians(45.0f));
-			plane.v1	= glm::rotate(plane.v1, theta1);
-			plane.v2	= glm::rotate(plane.v2, theta1);
-			planeNormal = glm::rotate(planeNormal, theta1);
-			planeNormal = glm::normalize(planeNormal);
+			lineA.v2	= glm::rotate(lineA.v2, toRadians(45.0f));
+			lineB.v1	= glm::rotate(lineB.v1, theta1);
+			lineB.v2	= glm::rotate(lineB.v2, theta1);
+			normalLineB = glm::rotate(glm::normalize(normalLineB), theta1);
 
-			Coord2 intersecPoint = findIntersecPoint(intersec, plane);
+			Coord2 intersecPoint = findIntersecPoint(lineA, lineB);
 
 			////////////////////////////////////////////////////////////////////////
 		
 			gl::ScopedBlendAdditive scpBlendAdd;
 
-			Rectf intersecBounds(intersec.v1, intersec.v2);
-			Rectf planeBounds(plane.v1, plane.v2);
+			Rectf intersecBounds(lineA.v1, lineA.v2);
+			Rectf planeBounds(lineB.v1, lineB.v2);
 
 			//Normal
 			gl::color(colorR);
-			gl::drawLine(planeBounds.getCenter(), planeNormal);
+			gl::drawLine(planeBounds.getCenter(), normalLineB);
 			//Plane
-			drawLine(plane, colorG);
+			drawLine(lineB, colorG);
 
 			//gl::color(ColorA(Color::white(), 0.25f));
 			//gl::drawSolidRect(intersecBounds);
 			//gl::drawStrokedCircle(intersecPoint, 0.1f, 32);
-			
-			float dotPlaneNormal		= glm::dot(intersec.v1, planeNormal);
 
-			float distPlane1			= glm::distance2(intersecPoint, plane.v1);
-			float distPlane2			= glm::distance2(intersecPoint, plane.v2);
-			float distPlanePoints		= glm::distance2(plane.v1, plane.v2);
-			bool insidePlaneLine		= distPlane1 > distPlanePoints || distPlane2 > distPlanePoints;
+			Coord2 distIntersecByLineA, distIntersecByLineB;
+			float dotPlaneNormal, distPointsLineA, distPointsLineB;
+			bool intersecOnLineA, intersecOnLineB;
+		
+			dotPlaneNormal = glm::dot(lineA.v1, normalLineB);
 
-			float distIntersec1			= glm::distance2(intersecPoint, intersec.v1);
-			float distIntersec2			= glm::distance2(intersecPoint, intersec.v2);
-			float distIntersecPoints	= glm::distance2(intersec.v1, intersec.v2);
-			bool insideIntersecLine		= distIntersec1 > distIntersecPoints || distIntersec2 > distIntersecPoints;
+			distIntersecByLineA = Coord2(glm::distance2(intersecPoint, lineA.v1), glm::distance2(intersecPoint, lineA.v2));
+			distPointsLineA = glm::distance2(lineA.v1, lineA.v2);
+			intersecOnLineA = distIntersecByLineA[0] > distPointsLineA || distIntersecByLineA[1] > distPointsLineA;
 
-			if (insidePlaneLine || insideIntersecLine){
-				drawLine(intersec, colorB);
+			distIntersecByLineB	= Coord2(glm::distance2(intersecPoint, lineB.v1), glm::distance2(intersecPoint, lineB.v2));
+			distPointsLineB	= glm::distance2(lineB.v1, lineB.v2);
+			intersecOnLineB	= distIntersecByLineB[0] > distPointsLineB || distIntersecByLineB[1] > distPointsLineB;
+
+			if (intersecOnLineA || intersecOnLineB){
+				drawLine(lineA, colorB);
 			}
 			else if (dotPlaneNormal < 0){
-				drawLine(Line{ intersec.v1, intersecPoint }, colorC);
-				drawLine(Line{ intersecPoint, intersec.v2 }, colorY);
+				drawLine(Line{ lineA.v1, intersecPoint }, colorC);
+				drawLine(Line{ intersecPoint, lineA.v2 }, colorY);
 			}else{
-				drawLine(Line{ intersec.v1, intersecPoint }, colorY);
-				drawLine(Line{ intersecPoint, intersec.v2 }, colorC);
+				drawLine(Line{ lineA.v1, intersecPoint }, colorY);
+				drawLine(Line{ intersecPoint, lineA.v2 }, colorC);
 			}
 		}
 	};
